@@ -1,0 +1,10 @@
+{
+	"name": "sokoban",
+	"version": "1.0.0",
+	"description": "A game to study object-oriented programing and nodejs",
+	"resository": "",
+	"author": "LiuGui",
+	"dependencies": {
+		
+	}
+}
