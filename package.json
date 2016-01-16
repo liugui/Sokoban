@@ -1,10 +1,11 @@
 {
-	"name": "sokoban",
-	"version": "1.0.0",
-	"description": "A game to study object-oriented programing and nodejs",
-	"resository": "",
-	"author": "LiuGui",
-	"dependencies": {
-		
-	}
+  "name": "sokoban",
+  "version": "1.0.0",
+  "description": "A game to study object-oriented programing and nodejs",
+  "resository": "",
+  "author": "LiuGui",
+  "dependencies": {
+    "events": "^1.1.0",
+    "keypress": "^0.2.1"
+  }
 }
