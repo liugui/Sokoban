@@ -153,8 +153,8 @@
             this.statusArray = array;
         };
 
-        this.getRestTargetNum = function() {
-            return this.restTargetNum = toolObject.getGameObjectNum(this.statusArray, '0');
+        this.setRestTargetNum = function() {
+            this.restTargetNum = toolObject.getGameObjectNum(this.statusArray, '0');
         };
 
         this.setBoxes = function(pos, boxObject) {
@@ -185,21 +185,20 @@
                 this.changeStatusArray(checkMoveResult.nextPos, 'p');
                 if (this.targets[this.person.x] && this.targets[this.person.x][this.person.y]) {
                     resetPersonPosVal = '0';
-                    this.restTargetNum++;
                 }
                 this.changeStatusArray(checkMoveResult.currentPersonPos, resetPersonPosVal);
                 this.person.x = checkMoveResult.nextPos.x;
                 this.person.y = checkMoveResult.nextPos.y; // update person's position
-                if (checkMoveResult.canMove == 'moveToTarget' && !checkMoveResult.moveWithBox) {
-                    this.restTargetNum--;
-                }
                 if (checkMoveResult.moveWithBox) {
                     this.changeStatusArray(checkMoveResult.nextNextPos, 'b');
                     this.setBoxPos(checkMoveResult.nextPos.x, checkMoveResult.nextPos.y, checkMoveResult.nextNextPos);
                     if (checkMoveResult.canMove == 'moveToTarget') {
                         this.restTargetNum--;
+                    } else if(this.targets[checkMoveResult.nextPos.x][checkMoveResult.nextPos.y]) {// move a box off a target
+                        this.restTargetNum++;
                     }
                 }
+                console.log(this.restTargetNum);
                 if (this.checkSuccess()) {
                     console.log('success');
                 } else {
@@ -231,7 +230,7 @@
         };
 
         this.checkNextMoveStatus = function(nextType, firstBox) {
-            if (nextType === ' ' || nextType === '0') {
+            if (nextType === ' ') {
                 return 'moveToEmpty';
             } else if (nextType === '0') {
                 return 'moveToTarget'
@@ -310,6 +309,7 @@
         this.startGame = function() {
             levelHandler.readLevelTxt();
             gameLogic.setStatusArray(levelHandler.logicArray);
+            gameLogic.setRestTargetNum();
             output.showResults(gameLogic.statusArray);
             gameLogic.person = new Person(toolObject.getGameObjectPos(gameLogic.statusArray, 'p'));
             toolObject.getGameObjectPos(gameLogic.statusArray, 'b').forEach(function(elem) {
