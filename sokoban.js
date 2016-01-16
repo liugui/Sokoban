@@ -1,7 +1,8 @@
 (function() {
     // Handle events
     var events = require('events'),
-        emitter = new events.EventEmitter();
+        emitter = new events.EventEmitter(),
+        fs = require('fs');
 
     var Point = function(x, y) {
         this.x = x;
@@ -22,7 +23,7 @@
         };
 
         this.startListen = function() {
-        	var self = this;
+            var self = this;
             this.listenStatus = true;
             keypress(process.stdin);
             process.stdin.on('keypress', function(ch, key) {
@@ -45,7 +46,12 @@
 
     // Handle Level
     var LevelHandler = function() {
+
+        var self = this;
+
         this.level = 1;
+        this.width = 10;
+        this.logicArray = [];
 
         this.getLevel = function() {
             return this.level
@@ -56,14 +62,16 @@
             this.level = level;
         };
 
-        this.readLevelTxt = function() {
-            // TODO
-            // 1-># 0->'' 2->p 3->box 4->target
-            this.width = 10;
-
-            this.originArray = ['#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', ' ', ' ', ' ', '#', '#', ' ', ' ', ' ', '#', '#', '#', 'p', 'b', ' ', ' ', '0', ' ', ' ', '#', '#', ' ', ' ', ' ', ' ', ' ', ' ', '#', ' ', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#'];
-            // LogicArray is used in the whole game
-            this.logicArray = toolObject.getTransformArray(this.originArray, this.width);
+        this.readLevelTxt = function(level, afterInitGame) {
+            var input = fs.createReadStream('level_' + level + '.txt');
+            // this.readTxt(input);
+            input.on('data', function(data) {
+                data += '';
+                data.split('\r\n').forEach(function(elem) { // TODO: in other operation system such as linux or os, should use other char
+                    self.logicArray.push(elem.split(''));
+                });
+                afterInitGame();
+            });
         };
     };
 
@@ -194,11 +202,10 @@
                     this.setBoxPos(checkMoveResult.nextPos.x, checkMoveResult.nextPos.y, checkMoveResult.nextNextPos);
                     if (checkMoveResult.canMove == 'moveToTarget') {
                         this.restTargetNum--;
-                    } else if(this.targets[checkMoveResult.nextPos.x][checkMoveResult.nextPos.y]) {// move a box off a target
+                    } else if (this.targets[checkMoveResult.nextPos.x] && this.targets[checkMoveResult.nextPos.x][checkMoveResult.nextPos.y]) { // move a box off a target
                         this.restTargetNum++;
                     }
                 }
-                console.log(this.restTargetNum);
                 if (this.checkSuccess()) {
                     console.log('success');
                 } else {
@@ -304,10 +311,16 @@
         var levelHandler = new LevelHandler(),
             output = new OutputController(),
             input = new InputController(),
-            gameLogic = new GameLogic();
+            gameLogic = new GameLogic(),
+            self = this;
+
+        this.initGame = function() {
+            levelHandler.readLevelTxt(1, function() {
+                self.startGame.call(self)
+            });
+        };
 
         this.startGame = function() {
-            levelHandler.readLevelTxt();
             gameLogic.setStatusArray(levelHandler.logicArray);
             gameLogic.setRestTargetNum();
             output.showResults(gameLogic.statusArray);
@@ -319,8 +332,8 @@
                 gameLogic.setTargets(elem, new Target(elem));
             });
             input.startListen();
-            emitter.on('input', function(direction){
-            	gameLogic.handlMove.call(gameLogic, direction)
+            emitter.on('input', function(direction) {
+                gameLogic.handlMove.call(gameLogic, direction)
             });
             emitter.on('print', function() {
                 output.showResults(gameLogic.statusArray);
@@ -330,6 +343,6 @@
 
     // execute
     var sokoban = new Sokoban();
-    sokoban.startGame();
+    sokoban.initGame();
 
 })();
