@@ -27,11 +27,6 @@
             this.listenStatus = true;
             keypress(process.stdin);
             process.stdin.on('keypress', function(ch, key) {
-                // self.inputCallback(key.name);
-                // console.log('got "keypress"', key);
-                // if (key && key.ctrl && key.name == 'c') {
-                //     process.stdin.pause();
-                // }
                 emitter.emit('input', key.name);
             });
             process.stdin.setRawMode(true);
@@ -50,7 +45,6 @@
         var self = this;
 
         this.level = 1;
-        this.width = 10;
         this.logicArray = [];
 
         this.getLevel = function() {
@@ -77,22 +71,11 @@
 
     // Handle output
     var OutputController = function() {
-        this.showResults = function(array, width) {
-            if (array.length && array[0] instanceof Array) {
-                this.showTwoArrayResults(array);
-            } else if (array.length && typeof array[0] != 'object') {
-                this.showOneArrayResults(array, width);
-            };
-        };
 
-        this.showTwoArrayResults = function(array) {
+        this.showResults = function(array) {
             array.forEach(function(elem) {
                 process.stdout.write(elem.join('') + '\n')
             });
-        };
-
-        this.showOneArrayResults = function() {
-
         }
     };
 
@@ -166,12 +149,16 @@
         };
 
         this.setBoxes = function(pos, boxObject) {
-            this.boxes[pos.x] = [];
+            if(!this.boxes[pos.x]) {
+                this.boxes[pos.x] = []
+            } 
             this.boxes[pos.x][pos.y] = boxObject;
         };
 
         this.setTargets = function(pos, targetObject) {
-            this.targets[pos.x] = [];
+            if(!this.targets[pos.x]) {
+                this.targets[pos.x] = [];
+            }
             this.targets[pos.x][pos.y] = targetObject;
         };
 
@@ -186,23 +173,23 @@
         };
 
         this.handlMove = function(direction) {
-            var checkMoveResult = this.checkIfCanMove(direction);
-            checkMoveResult.currentPersonPos = new Point(this.person.x, this.person.y);
-            if (checkMoveResult.canMove) { // if can move
+            var r = this.checkIfCanMove(direction);
+            r.currentPersonPos = new Point(this.person.x, this.person.y);
+            if (r.canMove) { // if can move
                 var resetPersonPosVal = ' ';
-                this.changeStatusArray(checkMoveResult.nextPos, 'p');
+                this.changeStatusArray(r.nextPos, 'p');
                 if (this.targets[this.person.x] && this.targets[this.person.x][this.person.y]) {
                     resetPersonPosVal = '0';
                 }
-                this.changeStatusArray(checkMoveResult.currentPersonPos, resetPersonPosVal);
-                this.person.x = checkMoveResult.nextPos.x;
-                this.person.y = checkMoveResult.nextPos.y; // update person's position
-                if (checkMoveResult.moveWithBox) {
-                    this.changeStatusArray(checkMoveResult.nextNextPos, 'b');
-                    this.setBoxPos(checkMoveResult.nextPos.x, checkMoveResult.nextPos.y, checkMoveResult.nextNextPos);
-                    if (checkMoveResult.canMove == 'moveToTarget') {
+                this.changeStatusArray(r.currentPersonPos, resetPersonPosVal);
+                this.person.x = r.nextPos.x;
+                this.person.y = r.nextPos.y; // update person's position
+                if (r.moveWithBox) {
+                    this.changeStatusArray(r.nextNextPos, 'b');
+                    this.setBoxPos(r.nextPos.x, r.nextPos.y, r.nextNextPos);
+                    if (r.canMove == 'moveToTarget') {
                         this.restTargetNum--;
-                    } else if (this.targets[checkMoveResult.nextPos.x] && this.targets[checkMoveResult.nextPos.x][checkMoveResult.nextPos.y]) { // move a box off a target
+                    } else if (this.targets[r.nextPos.x] && this.targets[r.nextPos.x][r.nextPos.y]) { // move a box off a target
                         this.restTargetNum++;
                     }
                 }
@@ -255,21 +242,6 @@
 
     // tools
     var toolObject = {
-        // transform between one dimension array and two dimension array
-        getTransformArray: function(array, width) {
-            var result = [];
-            if (width && typeof array[0] != 'object' && array.length) {
-                while (array.length) {
-                    result.push(array.splice(0, width)); // splice return an array, and change the origin array
-                }
-            } else if (array[0] instanceof Array && array.length) {
-                array.forEach(function(elem) {
-                    result = result.concat(elem);
-                });
-            }
-            return result;
-        },
-
         getGameObjectNum: function(array, objectChar) {
             var charNum = 0;
             array.forEach(function(value) {
